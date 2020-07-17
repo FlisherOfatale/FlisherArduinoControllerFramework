@@ -1,4 +1,4 @@
-# FlisherArduinoControllers
+# FlisherArduinoControllerFramework
 
 Arduino Sketch file for my custom controllers intially built for Star Citizen.
 The intent is to make a versatile code with a simple config that other people can reuse easily.
