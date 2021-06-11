@@ -34,9 +34,11 @@ struct Axis {
   int type;
   int min;
   int max;
+  int sensitivity; 
   int deadzone_limit;
   int deadzone_value;
   int deadzone_min;
   int deadzone_max;
   int lastValue;
+  int sensitivity_max_value;
 };

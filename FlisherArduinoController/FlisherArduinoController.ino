@@ -1,4 +1,4 @@
-// Version 1.1, based on Flisher Mining Controller MK3
+// Version 1.2, based on Flisher Mining Controller MK3, version improved for Adamist
 
 #include <ShiftIn.h>  // https://github.com/InfectedBytes/ArduinoShiftIn
 #include <Joystick.h> // Joystick Library from https://github.com/MHeironimus/ArduinoJoystickLibrary

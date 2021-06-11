@@ -54,6 +54,7 @@ void init_axis() {
     
     IO_Axis[i].deadzone_min = IO_Axis[i].deadzone_value - IO_Axis[i].deadzone_limit;
     IO_Axis[i].deadzone_max = IO_Axis[i].deadzone_value + IO_Axis[i].deadzone_limit;
+    IO_Axis[i].sensitivity_max_value = 1023 - IO_Axis[i].sensitivity;
   }
 }
 
@@ -61,7 +62,7 @@ void init_drivers() {
   Keyboard.begin();
   Joystick.begin();
 
-  if (ShiftRegisterChipCount > 0) {
+  if (ShiftRegisterChipCount >0) {
     // declare pins: pLoadPin, clockEnablePin, dataPin, clockPin
     // shift.begin(8, 9, 11, 12); // Leonardo
     shift.begin(2, 9, 14, 15); // Pro Micro
@@ -72,7 +73,7 @@ void init_drivers() {
 void init_actions() {
   for (int i = 0; i < IO_PhysicalButtons_Count; i++) {
     IO_PhysicalButtons[i].lastState =  -1;
-  }
+  } 
 
   for (int i = 0; i < IO_PhysicalButtons_Count; i++) {
     IO_ShiftRegisterBits[i].lastState =  -1;
@@ -100,6 +101,10 @@ int Generate_Action(struct Button CurrentButton, int currentButtonState ) {
     calculatedState = !currentButtonState;
   }
 
+  if (CurrentButton.type == "alt") {
+    AltMode = calculatedState;
+    returnActionState = calculatedState;
+  }
   if (CurrentButton.type == "button") {
       int button = String(CurrentButton.action.normal).toInt() -1;
       Joystick.setButton(button, calculatedState);
@@ -168,11 +173,14 @@ void check_buttons() {
   
     // Validate if the state of the button changed
     if (currentButtonState != IO_PhysicalButtons[i].lastState) {      
-      IO_PhysicalButtons[i].lastActionState = Generate_Action( IO_PhysicalButtons[i], currentButtonState );  
+      if (AltMode == 0) IO_PhysicalButtons[i].lastActionState = Generate_Action( IO_PhysicalButtons[i], currentButtonState );  
+      else IO_PhysicalButtons[i].lastActionState = Generate_Action( IO_PhysicalButtonsAlt[i], currentButtonState );  
       IO_PhysicalButtons[i].lastState = currentButtonState;
+      if (DEBUG_MODE){
         Serial.print("lastActionState: ");
         Serial.print(IO_PhysicalButtons[i].lastActionState);
         Serial.println();
+      }
     }
   }
   
@@ -198,10 +206,25 @@ void check_buttons() {
 
 void check_axis() {
   for (int i = 0; i < IO_Axis_Count; i++) {
-    int value = analogRead(IO_Axis[i].pin);    
+    int value = analogRead(IO_Axis[i].pin);  
+
     if (value >= IO_Axis[i].deadzone_min && value <= IO_Axis[i].deadzone_max) {
       value = IO_Axis[i].deadzone_value;
-    }      
+    }    
+
+    //Code to bypass sensitivity Axis
+    if (IO_Axis[i].sensitivity != 0) {
+      if ((IO_Axis[i].lastValue < value + IO_Axis[i].sensitivity) && (IO_Axis[i].lastValue > value - IO_Axis[i].sensitivity)) {
+        value = IO_Axis[i].lastValue;
+        if (value < IO_Axis[i].sensitivity) {
+          value = 0;
+        }
+      }     
+    }
+    if (value > IO_Axis[i].sensitivity_max_value) {
+      value = 1023;
+    }
+    
     if (IO_Axis[i].type == AXIS_X) {
       Joystick.setXAxis(value);    
     }
@@ -209,7 +232,8 @@ void check_axis() {
       Joystick.setYAxis(value);    
     }
     if (IO_Axis[i].type == AXIS_Z) {
-      Joystick.setZAxis(value);    
+      Joystick.setZAxis(value);  
+      int t = IO_Axis[i].lastValue - value;
     }
     if (IO_Axis[i].type == AXIS_RX) {
       Joystick.setRxAxis(value);    
@@ -235,5 +259,6 @@ void check_axis() {
     if (IO_Axis[i].type == AXIS_STEERING) {
       Joystick.setSteering(value);    
     }
+    IO_Axis[i].lastValue = value;
   }
 }
